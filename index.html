@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Lzjs : Compression by LZ algorithm in JavaScript.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Lzjs</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/polygonplanet/lzjs">View on GitHub</a>
+
+          <h1 id="project_title">Lzjs</h1>
+          <h2 id="project_tagline">Compression by LZ algorithm in JavaScript.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/polygonplanet/lzjs/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/polygonplanet/lzjs/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="lzjs" class="anchor" href="#lzjs" aria-hidden="true"><span class="octicon octicon-link"></span></a>lzjs</h1>
+
+<p><a href="https://travis-ci.org/polygonplanet/lzjs"><img src="https://travis-ci.org/polygonplanet/lzjs.svg" alt="Build Status"></a></p>
+
+<p>Compression by LZ algorithm in JavaScript.</p>
+
+<p>This is useful when storing the large data in a size limited storage (e.g., localStorage, cookie etc.).</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<h3>
+<a id="in-a-browser" class="anchor" href="#in-a-browser" aria-hidden="true"><span class="octicon octicon-link"></span></a>In a browser:</h3>
+
+<div class="highlight highlight-html"><pre>&lt;<span class="nt">script</span> <span class="na">src</span>=<span class="s2">"lzjs.js"</span>&gt;&lt;/<span class="nt">script</span>&gt;</pre></div>
+
+<p>or</p>
+
+<div class="highlight highlight-html"><pre>&lt;<span class="nt">script</span> <span class="na">src</span>=<span class="s2">"lzjs.min.js"</span>&gt;&lt;/<span class="nt">script</span>&gt;</pre></div>
+
+<p>The object named "lzjs" will defined in the global scope.</p>
+
+<h3>
+<a id="in-nodejs" class="anchor" href="#in-nodejs" aria-hidden="true"><span class="octicon octicon-link"></span></a>In Node.js:</h3>
+
+<div class="highlight highlight-bash"><pre>npm install lzjs</pre></div>
+
+<div class="highlight highlight-javascript"><pre><span class="k">var</span> lzjs <span class="o">=</span> <span class="nf">require</span>(<span class="s1">'lzjs'</span>);</pre></div>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<ul>
+<li><p>{<em>string</em>} lzjs.<strong>compress</strong> ( {<em>string</em>|<em>Buffer</em>} data )<br>
+Compress data.<br>
+<a href="https://github.com/param" class="user-mention">@param</a> {<em>string</em>|<em>Buffer</em>} <em>data</em> Input data<br>
+<a href="https://github.com/return" class="user-mention">@return</a> {<em>string</em>} Compressed data</p></li>
+<li><p>{<em>string</em>} lzjs.<strong>decompress</strong> ( {<em>string</em>} data )<br>
+Decompress data.<br>
+<a href="https://github.com/param" class="user-mention">@param</a> {<em>string</em>} <em>data</em> Input data<br>
+<a href="https://github.com/return" class="user-mention">@return</a> {<em>string</em>} Decompressed data</p></li>
+</ul>
+
+<div class="highlight highlight-javascript"><pre><span class="k">var</span> data <span class="o">=</span> <span class="s1">'hello hello hello'</span>;
+<span class="k">var</span> compressed <span class="o">=</span> lzjs.compress(data);
+<span class="nc">console</span><span class="nf">.log</span>(compressed); <span class="c1">// Outputs a compressed binary string</span>
+<span class="k">var</span> decompressed <span class="o">=</span> lzjs.decompress(compressed);
+<span class="nc">console</span><span class="nf">.log</span>(decompressed <span class="o">===</span> data); <span class="c1">// true</span></pre></div>
+
+<h2>
+<a id="demo" class="anchor" href="#demo" aria-hidden="true"><span class="octicon octicon-link"></span></a>Demo</h2>
+
+<ul>
+<li><a href="http://polygonplanet.github.io/lzjs/demo/">Demo</a></li>
+</ul>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>MIT</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Lzjs maintained by <a href="https://github.com/polygonplanet">polygonplanet</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
