@@ -1,6 +1,6 @@
 {
   "name": "lzjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Compression by LZ algorithm in JavaScript.",
   "main": "lzjs.js",
   "directories": {

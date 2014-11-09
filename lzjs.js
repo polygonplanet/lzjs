@@ -3,7 +3,7 @@
  *
  * @description  Compression by LZ algorithm in JavaScript.
  * @fileOverview Data compression library
- * @version      1.0.0
+ * @version      1.0.1
  * @date         2014-11-10
  * @link         https://github.com/polygonplanet/lzjs
  * @copyright    Copyright (c) 2014 polygon planet <polygon.planet.aqua@gmail.com>
@@ -27,7 +27,6 @@
   var fromCharCode = String.fromCharCode;
   var hasOwnProperty = Object.prototype.hasOwnProperty;
 
-  //var table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var table = (function() {
     var t = '';
     for (var i = 0x20; i < 0x7f; i++) {
