@@ -1,0 +1,29 @@
+{
+  "name": "lzjs",
+  "version": "1.0.0",
+  "description": "Compression by LZ algorithm in JavaScript.",
+  "main": "lzjs.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "scripts": {
+    "test": "mocha tests/test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:polygonplanet/lzjs.git"
+  },
+  "keywords": [
+    "compression", "compress", "lz", "lz77", "lzss", "base62"
+  ],
+  "author": "polygon planet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/polygonplanet/lzjs/issues"
+  },
+  "homepage": "https://github.com/polygonplanet/lzjs"
+}
