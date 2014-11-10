@@ -3,8 +3,8 @@
  *
  * @description  Compression by LZ algorithm in JavaScript.
  * @fileOverview Data compression library
- * @version      1.0.1
- * @date         2014-11-10
+ * @version      1.0.2
+ * @date         2014-11-11
  * @link         https://github.com/polygonplanet/lzjs
  * @copyright    Copyright (c) 2014 polygon planet <polygon.planet.aqua@gmail.com>
  * @license      Licensed under the MIT license.
@@ -306,14 +306,14 @@
       return result;
     },
     compress: function(data) {
-      if (data == null) {
+      if (data == null || data.length === 0) {
         return '';
       }
 
       return this._compressW(this._compressLzss(data));
     },
     decompress: function(data) {
-      if (data == null) {
+      if (data == null || data.length === 0) {
         return '';
       }
 
