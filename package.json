@@ -1,6 +1,6 @@
 {
   "name": "lzjs",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Compression by LZ algorithm in JavaScript.",
   "main": "lzjs.js",
   "directories": {
@@ -18,7 +18,7 @@
     "url": "git@github.com:polygonplanet/lzjs.git"
   },
   "keywords": [
-    "compression", "compress", "lz", "lz77", "lzss", "base62"
+    "compression", "compress", "lz", "lz77", "lzss", "base64", "string"
   ],
   "author": "polygon planet",
   "license": "MIT",
