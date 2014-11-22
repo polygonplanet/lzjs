@@ -107,7 +107,6 @@ describe('lzjs test', function() {
         assert(c.length > 0);
         var compressed = lzjs.compress(c);
         assert(compressed.length > 0);
-        assert(c.length > compressed.length);
         var decompressed = lzjs.decompress(compressed);
         assert.equal(decompressed, c);
       });
