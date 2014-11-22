@@ -37,13 +37,27 @@ var lzjs = require('lzjs');
 
 ## Usage
 
-* {_string_} lzjs.**compress** ( {_string_|_Buffer_} data )  
+### compress/decompress
+
+* {_string_} lzjs.**compress** ( data )  
   Compress data.  
   @param {_string_|_Buffer_} _data_ Input data  
   @return {_string_} Compressed data
 
-* {_string_} lzjs.**decompress** ( {_string_} data )  
+* {_string_} lzjs.**decompress** ( data )  
   Decompress data.  
+  @param {_string_} _data_ Input data  
+  @return {_string_} Decompressed data
+
+### compressBase64/decompressBase64
+
+* {_string_} lzjs.**compressBase64** ( data )  
+  Compress data to base64 string.  
+  @param {_string_|_Buffer_} _data_ Input data  
+  @return {_string_} Compressed data
+
+* {_string_} lzjs.**decompressBase64** ( data )  
+  Decompress data from base64 string.  
   @param {_string_} _data_ Input data  
   @return {_string_} Decompressed data
 
