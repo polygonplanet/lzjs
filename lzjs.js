@@ -3,8 +3,8 @@
  *
  * @description  Compression by LZ algorithm in JavaScript.
  * @fileOverview Data compression library
- * @version      1.1.0
- * @date         2014-11-22
+ * @version      1.2.0
+ * @date         2014-11-27
  * @link         https://github.com/polygonplanet/lzjs
  * @copyright    Copyright (c) 2014 polygon planet <polygon.planet.aqua@gmail.com>
  * @license      Licensed under the MIT license.
@@ -30,6 +30,27 @@
 
   var fromCharCode = String.fromCharCode;
   var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+  var HAS_TYPED = typeof Uint8Array !== 'undefined' &&
+                  typeof Uint16Array !== 'undefined';
+
+  // Test for String.fromCharCode.apply.
+  var CAN_CHARCODE_APPLY = false;
+  var CAN_CHARCODE_APPLY_TYPED = false;
+
+  try {
+    if (fromCharCode.apply(null, [0x61]) === 'a') {
+      CAN_CHARCODE_APPLY = true;
+    }
+  } catch (e) {}
+
+  if (HAS_TYPED) {
+    try {
+      if (fromCharCode.apply(null, new Uint8Array([0x61])) === 'a') {
+        CAN_CHARCODE_APPLY_TYPED = true;
+      }
+    } catch (e) {}
+  }
 
   var TABLE = (function() {
     var table = '';
@@ -61,6 +82,15 @@
   var WINDOW_MAX = 1024;
   var WINDOW_BUFFER_MAX = 304; // maximum 304
 
+  // fn.apply stack max range
+  var APPLY_BUFFER_SIZE = 65533;
+
+  // Chunk buffer length
+  var COMPRESS_CHUNK_SIZE = APPLY_BUFFER_SIZE;
+  var COMPRESS_CHUNK_MAX = COMPRESS_CHUNK_SIZE - TABLE_LENGTH;
+  var DECOMPRESS_CHUNK_SIZE = APPLY_BUFFER_SIZE;
+  var DECOMPRESS_CHUNK_MAX = DECOMPRESS_CHUNK_SIZE + WINDOW_MAX * 2;
+
   // Unicode table : U+0000 - U+0084
   var LATIN_CHAR_MAX = 11;
   var LATIN_BUFFER_MAX = LATIN_CHAR_MAX * (LATIN_CHAR_MAX + 1);
@@ -83,81 +113,104 @@
   var COMPRESS_INDEX = COMPRESS_FIXED_START + 5; // 59
 
 
-  // LZSS Compression
-  function LZSS() {
-    this.init();
+  // LZSS Compressor
+  function LZSSCompressor(options) {
+    this._init(options);
   }
 
-  LZSS.prototype = {
-    init: function() {
+  LZSSCompressor.prototype = {
+    _init: function(options) {
+      options || (options = {});
+
       this._data = null;
-      this._offset = null;
-      this._index = null;
-      this._length = null;
+      this._table = null;
+      this._result = null;
+      this._onDataCallback = options.onData;
+      this._onEndCallback = options.onEnd;
+      this._maxBytes = options.maxBytes;
     },
-    _createWindow: function() {
-      var alpha = 'abcdefghijklmnopqrstuvwxyz';
-
-      var win = '';
-      var len = alpha.length;
-      var i, j, c, c2;
-
-      for (i = 0; i < len; i++) {
-        c = alpha.charAt(i);
-        for (j = len - 1; j > 15 && win.length < WINDOW_MAX; j--) {
-          c2 = alpha.charAt(j);
-          win += ' ' + c + ' ' + c2;
-        }
+    _createTable: function() {
+      var table = createBuffer(8, TABLE_LENGTH);
+      for (var i = 0; i < TABLE_LENGTH; i++) {
+        table[i] = TABLE.charCodeAt(i);
       }
-
-      while (win.length < WINDOW_MAX) {
-        win = ' ' + win;
-      }
-      win = win.slice(0, WINDOW_MAX);
-
-      return win;
+      return table;
     },
-    // Searches for a longer match
+    _onData: function(buffer, length) {
+      var data = bufferToString(buffer, length);
+
+      if (this._onDataCallback) {
+        this._onDataCallback(data);
+      } else {
+        this._result += data;
+      }
+    },
+    _onEnd: function() {
+      if (this._onEndCallback) {
+        this._onEndCallback();
+      }
+      this._data = this._table = null;
+    },
+    // Searches for a longest match
     _search: function() {
-      this._length = 0;
-
-      var offset = this._offset;
-      var sub = this._data.substr(offset, BUFFER_MAX);
-      var len = sub.length;
-      var pos = offset - WINDOW_BUFFER_MAX;
-
       var i = 2;
-      var j, s, win, index;
+      var data = this._data;
+      var offset = this._offset;
+      var len = BUFFER_MAX;
+      if (this._dataLen - offset < len) {
+        len = this._dataLen - offset;
+      }
+      if (i > len) {
+        return false;
+      }
 
-      while (i <= len) {
-        s = sub.substr(0, i);
-        win = this._data.substring(pos, offset + i - 1);
+      var pos = offset - WINDOW_BUFFER_MAX;
+      var win = data.substring(pos, offset + len);
+      var limit = offset + i - 3 - pos;
+      var j, s, index, lastIndex, bestIndex;
 
-        // Fast check by pre-match for the slow lastIndexOf.
-        if (!~win.indexOf(s)) {
+      do {
+        if (i === 2) {
+          s = data.charAt(offset) + data.charAt(offset + 1);
+
+          // Fast check by pre-match for the slow lastIndexOf.
+          index = win.indexOf(s);
+          if (!~index || index > limit) {
+            break;
+          }
+        } else if (i === 3) {
+          s = s + data.charAt(offset + 2);
+        } else {
+          s = data.substr(offset, i);
+        }
+
+        lastIndex = win.lastIndexOf(s, limit);
+        if (!~lastIndex) {
           break;
         }
 
-        index = win.lastIndexOf(s);
-        j = pos + index;
-
-        while (i <= len) {
-          if (sub.charCodeAt(i) !== this._data.charCodeAt(j + i)) {
+        bestIndex = lastIndex;
+        j = pos + lastIndex;
+        do {
+          if (data.charCodeAt(offset + i) !== data.charCodeAt(j + i)) {
             break;
           }
+        } while (++i < len);
+
+        if (index === lastIndex) {
           i++;
+          break;
         }
 
-        this._index = WINDOW_BUFFER_MAX - index;
-        this._length = i;
-        i++;
+      } while (++i < len);
+
+      if (i === 2) {
+        return false;
       }
 
-      if (this._length > 0) {
-        return true;
-      }
-
-      return false;
+      this._index = WINDOW_BUFFER_MAX - bestIndex;
+      this._length = i - 1;
+      return true;
     },
     compress: function(data) {
       if (data == null || data.length === 0) {
@@ -165,94 +218,194 @@
       }
 
       var result = '';
+      var table = this._createTable();
+      var win = createWindow();
+      var buffer = createBuffer(8, COMPRESS_CHUNK_SIZE);
+      var i = 0;
+      var bytes = 0;
 
-      var chars = TABLE.split('');
-      var win = this._createWindow();
-
+      this._result = '';
       this._offset = win.length;
       this._data = win + data;
+      this._dataLen = this._data.length;
       win = data = null;
 
       var index = -1;
-      var lastIndex = -2;
-
-      var len = this._data.length;
+      var lastIndex = -1;
       var c, c1, c2, c3, c4;
 
-      while (this._offset < len) {
+      while (this._offset < this._dataLen) {
         if (!this._search()) {
           c = this._data.charCodeAt(this._offset++);
           if (c < LATIN_BUFFER_MAX) {
-            c1 = c % UNICODE_CHAR_MAX;
-            c2 = (c - c1) / UNICODE_CHAR_MAX;
+            if (c < UNICODE_CHAR_MAX) {
+              c1 = c;
+              c2 = 0;
+              index = LATIN_INDEX;
+            } else {
+              c1 = c % UNICODE_CHAR_MAX;
+              c2 = (c - c1) / UNICODE_CHAR_MAX;
+              index = c2 + LATIN_INDEX;
+            }
 
             // Latin index
-            index = c2 + LATIN_INDEX;
             if (lastIndex === index) {
-              result += chars[c1];
+              buffer[i++] = table[c1];
+              bytes++;
             } else {
-              result += chars[index - LATIN_INDEX_START] + chars[c1];
+              buffer[i++] = table[index - LATIN_INDEX_START];
+              buffer[i++] = table[c1];
+              bytes += 2;
               lastIndex = index;
             }
           } else {
-            c1 = c % UNICODE_BUFFER_MAX;
-            c2 = (c - c1) / UNICODE_BUFFER_MAX;
-            c3 = c1 % UNICODE_CHAR_MAX;
-            c4 = (c1 - c3) / UNICODE_CHAR_MAX;
+            if (c < UNICODE_BUFFER_MAX) {
+              c1 = c;
+              c2 = 0;
+              index = UNICODE_INDEX;
+            } else {
+              c1 = c % UNICODE_BUFFER_MAX;
+              c2 = (c - c1) / UNICODE_BUFFER_MAX;
+              index = c2 + UNICODE_INDEX;
+            }
+
+            if (c1 < UNICODE_CHAR_MAX) {
+              c3 = c1;
+              c4 = 0;
+            } else {
+              c3 = c1 % UNICODE_CHAR_MAX;
+              c4 = (c1 - c3) / UNICODE_CHAR_MAX;
+            }
 
             // Unicode index
-            index = c2 + UNICODE_INDEX;
             if (lastIndex === index) {
-              result += chars[c3] + chars[c4];
+              buffer[i++] = table[c3];
+              buffer[i++] = table[c4];
+              bytes += 2;
             } else {
-              result += chars[CHAR_START] +
-                chars[index - TABLE_LENGTH] + chars[c3] + chars[c4];
+              buffer[i++] = table[CHAR_START];
+              buffer[i++] = table[index - TABLE_LENGTH];
+              buffer[i++] = table[c3];
+              buffer[i++] = table[c4];
+              bytes += 4;
 
               lastIndex = index;
             }
           }
         } else {
-          c1 = this._index % BUFFER_MAX;
-          c2 = (this._index - c1) / BUFFER_MAX;
+          if (this._index < BUFFER_MAX) {
+            c1 = this._index;
+            c2 = 0;
+          } else {
+            c1 = this._index % BUFFER_MAX;
+            c2 = (this._index - c1) / BUFFER_MAX;
+          }
 
           if (this._length === 2) {
-            result += chars[c2 + COMPRESS_FIXED_START] + chars[c1];
+            buffer[i++] = table[c2 + COMPRESS_FIXED_START];
+            buffer[i++] = table[c1];
+            bytes += 2;
           } else {
-            result += chars[c2 + COMPRESS_START] +
-              chars[c1] + chars[this._length];
+            buffer[i++] = table[c2 + COMPRESS_START];
+            buffer[i++] = table[c1];
+            buffer[i++] = table[this._length];
+            bytes += 3;
           }
 
           this._offset += this._length;
-          index = -1;
-          lastIndex = -2;
+          if (~lastIndex) {
+            lastIndex = -1;
+          }
+        }
+
+        if (bytes > this._maxBytes) {
+          return false;
+        }
+
+        if (i >= COMPRESS_CHUNK_MAX) {
+          this._onData(buffer, i);
+          i = 0;
         }
       }
 
-      this._data = null;
-      return result;
+      if (i > 0) {
+        this._onData(buffer, i);
+      }
+
+      this._onEnd();
+      result = this._result;
+      this._result = null;
+      return result === null ? '' : result;
+    }
+  };
+
+
+  // LZSS Decompressor
+  function LZSSDecompressor(options) {
+    this._init(options);
+  }
+
+  LZSSDecompressor.prototype = {
+    _init: function(options) {
+      options || (options = {});
+
+      this._result = null;
+      this._onDataCallback = options.onData;
+      this._onEndCallback = options.onEnd;
+    },
+    _createTable: function() {
+      var table = {};
+      for (var i = 0; i < TABLE_LENGTH; i++) {
+        table[TABLE.charAt(i)] = i;
+      }
+      return table;
+    },
+    _onData: function(ended) {
+      var data;
+
+      if (this._onDataCallback) {
+        if (ended) {
+          data = this._result;
+          this._result = null;
+        } else {
+          var len = DECOMPRESS_CHUNK_SIZE - WINDOW_MAX;
+
+          data = this._result.substr(WINDOW_MAX, len);
+          this._result = this._result.slice(0, WINDOW_MAX) +
+                         this._result.substring(WINDOW_MAX + len);
+        }
+
+        if (data.length > 0) {
+          this._onDataCallback(data);
+        }
+      }
+    },
+    _onEnd: function() {
+      if (this._onEndCallback) {
+        this._onEndCallback();
+      }
     },
     decompress: function(data) {
       if (data == null || data.length === 0) {
         return '';
       }
 
-      var result = this._createWindow();
+      this._result = createWindow();
+      var result = '';
+      var table = this._createTable();
 
       var out = false;
       var index = null;
+      var len = data.length;
+      var offset = 0;
 
-      var i, len, c, c2, c3;
-      var code, pos, length, buffer, sub;
+      var c, c2, c3;
+      var code, pos, length, shrink, sub;
 
-      var chars = {};
-      for (i = 0, len = TABLE.length; i < len; i++) {
-        chars[TABLE.charAt(i)] = i;
-      }
-
-      for (i = 0, len = data.length; i < len; i++) {
-        c = chars[data.charAt(i)];
+      for (; offset < len; offset++) {
+        c = table[data.charAt(offset)];
         if (c === void 0) {
-          throw new Error('Out of range in decompression');
+          continue;
         }
 
         if (c < DECODE_MAX) {
@@ -261,71 +414,90 @@
             code = index * UNICODE_CHAR_MAX + c;
           } else {
             // Unicode index
-            c3 = chars[data.charAt(++i)];
+            c3 = table[data.charAt(++offset)];
             code = c3 * UNICODE_CHAR_MAX + c + UNICODE_BUFFER_MAX * index;
           }
-          result += fromCharCode(code);
+          this._result += fromCharCode(code);
         } else if (c < LATIN_DECODE_MAX) {
           // Latin starting point
           index = c - DECODE_MAX;
           out = false;
         } else if (c === CHAR_START) {
           // Unicode starting point
-          c2 = chars[data.charAt(++i)];
+          c2 = table[data.charAt(++offset)];
           index = c2 - 5;
           out = true;
         } else if (c < COMPRESS_INDEX) {
-          c2 = chars[data.charAt(++i)];
+          c2 = table[data.charAt(++offset)];
 
           if (c < COMPRESS_FIXED_START) {
             pos = (c - COMPRESS_START) * BUFFER_MAX + c2;
-            length = chars[data.charAt(++i)];
+            length = table[data.charAt(++offset)];
           } else {
             pos = (c - COMPRESS_FIXED_START) * BUFFER_MAX + c2;
             length = 2;
           }
 
-          sub = result.slice(-WINDOW_BUFFER_MAX)
+          sub = this._result.slice(-WINDOW_BUFFER_MAX)
             .slice(-pos).substring(0, length);
 
           if (sub) {
-            buffer = '';
-            while (buffer.length < length) {
-              buffer += sub;
+            shrink = '';
+            while (shrink.length < length) {
+              shrink += sub;
             }
-            buffer = buffer.substring(0, length);
-            result += buffer;
+            this._result += shrink.substring(0, length);
           }
           index = null;
         }
+
+        if (this._result.length >= DECOMPRESS_CHUNK_MAX) {
+          this._onData();
+        }
       }
 
-      result = result.substring(WINDOW_MAX);
-      data = null;
+      this._result = this._result.substring(WINDOW_MAX);
+      this._onData(true);
 
-      return result;
+      this._onEnd();
+      result = this._result;
+      this._result = null;
+      return result === null ? '' : result;
     }
   };
 
 
   // LZW Compression
-  function LZW() {}
+  function LZW(options) {
+    this._init(options);
+  }
 
   LZW.prototype = {
+    _init: function(options) {
+      options || (options = {});
+
+      this._codeStart = options.codeStart || 0xff;
+      this._codeMax = options.codeMax || 0xffff;
+      this._maxBytes = options.maxBytes;
+    },
     compress: function(data) {
       if (data == null || data.length === 0) {
         return '';
       }
 
       var result = '';
-      var buffer = '';
-
-      var dict = {};
-      var code = 0x100;
-
+      var resultBytes = 0;
       var i = 0;
       var len = data.length;
-      var c;
+      var buffer = '';
+      var code = this._codeStart + 1;
+      var codeMax = this._codeMax;
+      var codeBytes = 2;
+
+      var dict = [];
+      var dictLen = 0;
+
+      var c, s, key, index, bitLen, length;
 
       if (len > 0) {
         buffer = c = data.charAt(i++);
@@ -334,17 +506,42 @@
       while (i < len) {
         c = data.charAt(i++);
 
-        if (hasOwnProperty.call(dict, buffer + c)) {
+        key = buffer + c;
+        length = key.length;
+        bitLen = 1 << length;
+
+        if (((length < 32 && (dictLen & bitLen)) ||
+             (length >= 32 && dict[length] !== void 0)) &&
+            hasOwnProperty.call(dict[length], key)) {
           buffer += c;
         } else {
           if (buffer.length === 1) {
             result += buffer;
+            resultBytes++;
           } else {
-            result += dict[buffer];
+            result += dict[buffer.length][buffer];
+            resultBytes += codeBytes;
           }
 
-          if (code <= 0xffff) {
-            dict[buffer + c] = fromCharCode(code++);
+          if (resultBytes > this._maxBytes) {
+            return false;
+          }
+
+          if (code <= codeMax) {
+            key = buffer + c;
+            length = key.length;
+            bitLen = 1 << length;
+
+            if ((length < 32 && !(dictLen & bitLen)) ||
+                (length >= 32 && dict[length] === void 0)) {
+              dict[length] = {};
+              dictLen |= bitLen;
+            }
+
+            dict[length][key] = fromCharCode(code++);
+            if (code === 0x800) {
+              codeBytes = 3;
+            }
           }
 
           buffer = c;
@@ -353,8 +550,14 @@
 
       if (buffer.length === 1) {
         result += buffer;
+        resultBytes++;
       } else {
-        result += dict[buffer];
+        result += dict[buffer.length][buffer]
+        resultBytes += codeBytes;
+      }
+
+      if (resultBytes > this._maxBytes) {
+        return false;
       }
 
       return result;
@@ -366,8 +569,9 @@
 
       var result = '';
 
-      var dict = [];
-      var code = 0x100;
+      var dict = {};
+      var code = this._codeStart + 1;
+      var codeMax = this._codeStart;
 
       var i = 0;
       var len = data.length;
@@ -383,7 +587,7 @@
       while (i < len) {
         c = data.charCodeAt(i++);
 
-        if (c <= 0xff) {
+        if (c <= codeMax) {
           buffer = fromCharCode(c);
         } else {
           if (hasOwnProperty.call(dict, c)) {
@@ -406,50 +610,74 @@
 
 
   // LZJS Compression
-  function LZJS() {}
+  function LZJS(options) {
+    this._init(options);
+  }
 
   LZJS.prototype = {
+    _init: function(options) {
+      options || (options = {});
+
+      //TODO: Validate utf-8 encoding for command line.
+      this._encoding = options.encoding || 'utf-8';
+    },
     compress: function(data) {
       if (data == null || data.length === 0) {
         return '';
       }
 
       data = '' + data;
+
       var result = '';
-
-      var minCount = 26;
-      var maxCount = 192;
-
-      var chars = {};
-      var count = 0;
+      var dataBytes = byteLength(data);
+      var asciiLimitBytes = dataBytes * 0.9 | 0;
       var len = data.length;
-      var i = 0;
-      var c;
+      var options = {
+        maxBytes: dataBytes
+      };
+      var type;
 
-      while (i < len && count < maxCount) {
-        c = data.charAt(i++);
-        if (!hasOwnProperty.call(chars, c)) {
-          chars[c] = null;
-          count++;
+      if (dataBytes === len) {
+        // Ascii string [U+0000 - U+007F]
+        type = 'W';
+        options.codeStart = 0x7f;
+        options.codeMax = 0x7ff;
+        result = new LZW(options).compress(data);
+        if (result === false) {
+          type = 'S';
+          result = new LZSSCompressor(options).compress(data);
+          if (result === false) {
+            type = 'N';
+            result = data;
+          }
+        }
+      } else if (dataBytes > len && asciiLimitBytes < len) {
+        // String that is included most of the ASCII.
+        type = 'U';
+        result = new LZW(options).compress(toUTF8(data));
+        if (result === false) {
+          type = 'S';
+          result = new LZSSCompressor(options).compress(data);
+          if (result === false) {
+            type = 'N';
+            result = data;
+          }
+        }
+      } else {
+        // Unicode string
+        type = 'S';
+        result = new LZSSCompressor(options).compress(data);
+        if (result === false) {
+          type = 'U';
+          result = new LZW(options).compress(toUTF8(data));
+          if (result === false || byteLength(result) > dataBytes) {
+            type = 'N';
+            result = data;
+          }
         }
       }
 
-      var dataBytes = byteLength(data);
-      var resultBytes;
-
-      if (count <= minCount || count >= maxCount) {
-        result = this._compressByS(data);
-        resultBytes = result.length;
-      } else {
-        result = this._compressByW(data);
-        resultBytes = byteLength(result);
-      }
-
-      if (resultBytes > dataBytes) {
-        result = this._compressByN(data);
-      }
-
-      return result;
+      return type + result;
     },
     decompress: function(data) {
       if (data == null || data.length === 0) {
@@ -458,28 +686,26 @@
 
       data = '' + data;
       var type = data.charAt(0);
-      data = data.substring(1);
 
-      var method = '_decompressBy' + type;
-      if (typeof this[method] !== 'function') {
-        throw new Error('Invalid format in decompression');
+      switch (type) {
+        case 'S': return this._decompressByS(data.substring(1));
+        case 'W': return this._decompressByW(data.substring(1));
+        case 'U': return this._decompressByU(data.substring(1));
+        case 'N': return this._decompressByN(data.substring(1));
+        default: return data;
       }
-
-      return this[method](data);
-    },
-    _compressByS: function(data) {
-      return 'S' + new LZSS().compress(data);
-    },
-    _compressByW: function(data) {
-      return 'W' + new LZW().compress(toUTF8(data));
-    },
-    _compressByN: function(data) {
-      return 'N' + data;
     },
     _decompressByS: function(data) {
-      return new LZSS().decompress(data);
+      return new LZSSDecompressor().decompress(data);
     },
     _decompressByW: function(data) {
+      var options = {
+        codeStart: 0x7f,
+        codeMax: 0x7ff
+      };
+      return new LZW(options).decompress(data);
+    },
+    _decompressByU: function(data) {
       return toUTF16(new LZW().decompress(data));
     },
     _decompressByN: function(data) {
@@ -488,24 +714,94 @@
   };
 
 
+  // Create Sliding window
+  function createWindow() {
+    var alpha = 'abcdefghijklmnopqrstuvwxyz';
+    var win = '';
+    var len = alpha.length;
+    var i, j, c, c2;
+
+    for (i = 0; i < len; i++) {
+      c = alpha.charAt(i);
+      for (j = len - 1; j > 15 && win.length < WINDOW_MAX; j--) {
+        c2 = alpha.charAt(j);
+        win += ' ' + c + ' ' + c2;
+      }
+    }
+
+    while (win.length < WINDOW_MAX) {
+      win = ' ' + win;
+    }
+    win = win.slice(0, WINDOW_MAX);
+
+    return win;
+  }
+
+
+  function truncateBuffer(buffer, length) {
+    if (buffer.length === length) {
+      return buffer;
+    }
+
+    if (buffer.subarray) {
+      return buffer.subarray(0, length);
+    }
+
+    buffer.length = length;
+    return buffer;
+  }
+
+
+  function bufferToString(buffer, length) {
+    if (CAN_CHARCODE_APPLY && CAN_CHARCODE_APPLY_TYPED &&
+        length < APPLY_BUFFER_SIZE) {
+      try {
+        return fromCharCode.apply(null, truncateBuffer(buffer, length));
+      } catch (e) {
+        // Ignore RangeError: arguments too large
+      }
+    }
+
+    var string = '';
+    for (var i = 0; i < length; i++) {
+      string += fromCharCode(buffer[i]);
+    }
+    return string;
+  }
+
+
+  function stringToBuffer(string) {
+    var length = string.length;
+    var buffer = createBuffer(16, length);
+    for (var i = 0; i < length; i++) {
+      buffer[i] = string.charCodeAt(i);
+    }
+    return buffer;
+  }
+
+
+  function createBuffer(bits, size) {
+    if (!HAS_TYPED) {
+      return new Array(size);
+    }
+
+    switch (bits) {
+      case 8: return new Uint8Array(size);
+      case 16: return new Uint16Array(size);
+    }
+  }
+
+
   // UTF-16 to UTF-8
+  // Not convert the surrogate pairs for the 16 bits array buffer.
   function toUTF8(data) {
     var result = '';
     var i = 0;
     var len = data.length;
-    var c, c2;
+    var c;
 
     for (; i < len; i++) {
       c = data.charCodeAt(i);
-      if (c >= 0xd800 && c <= 0xd8ff) {
-        if (i + 1 < len) {
-          c2 = data.charCodeAt(i + 1);
-          if (c2 >= 0xdc00 && c2 <= 0xdfff) {
-            c = ((c & 0x3ff) << 10) + (c2 & 0x3ff) + 0x10000;
-            i++;
-          }
-        }
-      }
 
       if (c < 0x80) {
         result += fromCharCode(c);
@@ -514,11 +810,6 @@
                   fromCharCode(0x80 | (c & 0x3f));
       } else if (c < 0x10000) {
         result += fromCharCode(0xe0 | ((c >> 12) & 0xf)) +
-                  fromCharCode(0x80 | ((c >> 6) & 0x3f)) +
-                  fromCharCode(0x80 | (c & 0x3f));
-      } else {
-        result += fromCharCode(0xf0 | ((c >> 18) & 0xf)) +
-                  fromCharCode(0x80 | ((c >> 12) & 0x3f)) +
                   fromCharCode(0x80 | ((c >> 6) & 0x3f)) +
                   fromCharCode(0x80 | (c & 0x3f));
       }
@@ -548,54 +839,27 @@
         result += fromCharCode(((c & 0xf) << 12) |
                                ((c2 & 0x3f) << 6) |
                                (c3 & 0x3f));
-      } else if (i + 2 < len) {
-        c2 = data.charCodeAt(i++);
-        c3 = data.charCodeAt(i++);
-        c4 = data.charCodeAt(i++);
-        result += fromCharCode(((c & 0x7) << 18) |
-                               ((c2 & 0x3f) << 12) |
-                               ((c3 & 0x3f) << 6) |
-                               (c4 & 0x3f));
       }
     }
 
     return result;
   }
 
+
   // UTF-8 byte length
-  function byteLength(data) {
+  function byteLength(data, encoding) {
     var length = 0;
-    var c, c2;
+    var c;
 
     for (var i = 0, len = data.length; i < len; i++) {
       c = data.charCodeAt(i);
 
-      if (c >= 0xd800 && c <= 0xd8ff) {
-        if (i + 1 < len) {
-          c2 = data.charCodeAt(i + 1);
-          if (c2 >= 0xdc00 && c2 <= 0xdfff) {
-            c = ((c & 0x3ff) << 10) + (c2 & 0x3ff) + 0x10000;
-            i++;
-          } else {
-            continue;
-          }
-        } else {
-          continue;
-        }
-      }
-
       if (c < 0x80) {
-        length += 1;
+        length++;
       } else if (c < 0x800) {
         length += 2;
-      } else if (c < 0x10000) {
-        length += 3;
-      } else if (c < 0x200000) {
-        length += 4;
-      } else if (c < 0x4000000) {
-        length += 5;
       } else {
-        length += 6;
+        length += 3;
       }
     }
 
@@ -728,37 +992,41 @@
      * Compress data.
      *
      * @param {string|Buffer} data Input data
+     * @param {Object=} [options] Options
      * @return {string} Compressed data
      */
-    compress: function(data) {
-      return new LZJS().compress(data);
+    compress: function(data, options) {
+      return new LZJS(options).compress(data);
     },
     /**
      * Decompress data.
      *
      * @param {string} data Input data
+     * @param {Object=} [options] Options
      * @return {string} Decompressed data
      */
-    decompress: function(data) {
-      return new LZJS().decompress(data);
+    decompress: function(data, options) {
+      return new LZJS(options).decompress(data);
     },
     /**
      * Compress data to base64 string.
      *
      * @param {string|Buffer} data Input data
+     * @param {Object=} [options] Options
      * @return {string} Compressed data
      */
-    compressBase64: function(data) {
-      return base64encode(toUTF8(lzjs.compress(data)));
+    compressToBase64: function(data, options) {
+      return base64encode(toUTF8(new LZJS(options).compress(data)));
     },
     /**
      * Decompress data from base64 string.
      *
      * @param {string} data Input data
+     * @param {Object=} [options] Options
      * @return {string} Decompressed data
      */
-    decompressBase64: function(data) {
-      return lzjs.decompress(toUTF16(base64decode(data)));
+    decompressFromBase64: function(data, options) {
+      return new LZJS(options).decompress(toUTF16(base64decode(data)));
     }
   };
 
