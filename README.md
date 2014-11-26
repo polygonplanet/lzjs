@@ -22,13 +22,13 @@ or
 <script src="lzjs.min.js"></script>
 ```
 
-The object named "lzjs" will defined in the global scope.
+The object named "**lzjs**" will defined in the global scope.
 
 
 ### In Node.js:
 
 ```bash
-npm install lzjs
+npm install -g lzjs
 ```
 
 ```javascript
@@ -49,14 +49,14 @@ var lzjs = require('lzjs');
   @param {_string_} _data_ Input data  
   @return {_string_} Decompressed data
 
-### compressBase64/decompressBase64
+### compressToBase64 / decompressFromBase64
 
-* {_string_} lzjs.**compressBase64** ( data )  
+* {_string_} lzjs.**compressToBase64** ( data )  
   Compress data to base64 string.  
   @param {_string_|_Buffer_} _data_ Input data  
   @return {_string_} Compressed data
 
-* {_string_} lzjs.**decompressBase64** ( data )  
+* {_string_} lzjs.**decompressFromBase64** ( data )  
   Decompress data from base64 string.  
   @param {_string_} _data_ Input data  
   @return {_string_} Decompressed data
@@ -69,6 +69,25 @@ console.log(compressed); // Outputs a compressed binary string
 var decompressed = lzjs.decompress(compressed);
 console.log(decompressed === data); // true
 ```
+
+## Command Line:
+
+After `npm install -g lzjs`
+
+Note that command line compression is only valid the UTF-8 encoded file.
+
+### Add file to archive
+
+```bash
+lzjs -a something.txt
+```
+
+### Extract file
+
+```bash
+lzjs -x something.txt.lzjs
+```
+
 
 ## Demo
 
