@@ -1,6 +1,6 @@
 {
   "name": "lzjs",
-  "version": "1.2.0",
+  "version": "1.2.3",
   "description": "Compression by LZ algorithm in JavaScript.",
   "main": "lzjs.js",
   "directories": {
@@ -14,7 +14,7 @@
     "test": "mocha tests/test"
   },
   "bin": {
-    "lzjs": "bin/cli"
+    "lzjs": "bin/lzjs"
   },
   "repository": {
     "type": "git",
