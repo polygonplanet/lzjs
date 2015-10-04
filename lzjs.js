@@ -3,13 +3,14 @@
  *
  * @description  Compression by LZ algorithm in JavaScript.
  * @fileOverview Data compression library
- * @version      1.2.4
- * @date         2014-12-16
+ * @version      1.2.5
+ * @date         2015-10-04
  * @link         https://github.com/polygonplanet/lzjs
- * @copyright    Copyright (c) 2014 polygon planet <polygon.planet.aqua@gmail.com>
+ * @copyright    Copyright (c) 2014-2015 polygon planet <polygon.planet.aqua@gmail.com>
  * @license      Licensed under the MIT license.
  */
 
+/*jshint bitwise:false, eqnull:true */
 (function(name, context, factory) {
 
   // Supports UMD. AMD, CommonJS/Node.js and browser context
@@ -50,6 +51,12 @@
         CAN_CHARCODE_APPLY_TYPED = true;
       }
     } catch (e) {}
+  }
+
+  // IE has bug of String.prototype.lastIndexOf when second argument specified.
+  var STRING_LASTINDEXOF_BUG = false;
+  if ('abc\u307b\u3052'.lastIndexOf('\u307b\u3052', 1) !== -1) {
+    STRING_LASTINDEXOF_BUG = true;
   }
 
   var TABLE = (function() {
@@ -120,7 +127,7 @@
 
   LZSSCompressor.prototype = {
     _init: function(options) {
-      options || (options = {});
+      options = options || {};
 
       this._data = null;
       this._table = null;
@@ -167,7 +174,7 @@
       var pos = offset - WINDOW_BUFFER_MAX;
       var win = data.substring(pos, offset + len);
       var limit = offset + i - 3 - pos;
-      var j, s, index, lastIndex, bestIndex;
+      var j, s, index, lastIndex, bestIndex, winPart;
 
       do {
         if (i === 2) {
@@ -184,7 +191,13 @@
           s = data.substr(offset, i);
         }
 
-        lastIndex = win.lastIndexOf(s, limit);
+        if (STRING_LASTINDEXOF_BUG) {
+          winPart = data.substring(pos, offset + i - 1);
+          lastIndex = winPart.lastIndexOf(s);
+        } else {
+          lastIndex = win.lastIndexOf(s, limit);
+        }
+
         if (!~lastIndex) {
           break;
         }
@@ -347,7 +360,7 @@
 
   LZSSDecompressor.prototype = {
     _init: function(options) {
-      options || (options = {});
+      options = options || {};
 
       this._result = null;
       this._onDataCallback = options.onData;
@@ -474,7 +487,7 @@
 
   LZW.prototype = {
     _init: function(options) {
-      options || (options = {});
+      options = options || {};
 
       this._codeStart = options.codeStart || 0xff;
       this._codeMax = options.codeMax || 0xffff;
@@ -552,7 +565,7 @@
         result += buffer;
         resultBytes++;
       } else {
-        result += dict[buffer.length][buffer]
+        result += dict[buffer.length][buffer];
         resultBytes += codeBytes;
       }
 
@@ -616,7 +629,7 @@
 
   LZJS.prototype = {
     _init: function(options) {
-      options || (options = {});
+      options = options || {};
 
       //TODO: Validate utf-8 encoding for command line.
       this._encoding = options.encoding || 'utf-8';
