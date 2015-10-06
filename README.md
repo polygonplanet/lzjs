@@ -35,6 +35,12 @@ npm install -g lzjs
 var lzjs = require('lzjs');
 ```
 
+### bower:
+
+```bash
+bower install lzjs
+```
+
 ## Usage
 
 ### compress/decompress
