@@ -890,73 +890,115 @@
 
 
   // UTF-16 to UTF-8
-  // Not convert the surrogate pairs for the 16 bits array buffer.
   function toUTF8(data) {
-    var result = '';
+    var results = [];
     var i = 0;
     var len = data.length;
-    var c;
+    var c, second;
 
     for (; i < len; i++) {
       c = data.charCodeAt(i);
 
+      // high surrogate
+      if (c >= 0xd800 && c <= 0xdbff && i + 1 < len) {
+        second = data.charCodeAt(i + 1);
+        // low surrogate
+        if (second >= 0xdc00 && second <= 0xdfff) {
+          c = (c - 0xd800) * 0x400 + second - 0xdc00 + 0x10000;
+          i++;
+        }
+      }
+
       if (c < 0x80) {
-        result += fromCharCode(c);
+        results[results.length] = c;
       } else if (c < 0x800) {
-        result += fromCharCode(0xc0 | ((c >> 6) & 0x1f)) +
-                  fromCharCode(0x80 | (c & 0x3f));
+        results[results.length] = 0xc0 | ((c >> 6) & 0x1f);
+        results[results.length] = 0x80 | (c & 0x3f);
       } else if (c < 0x10000) {
-        result += fromCharCode(0xe0 | ((c >> 12) & 0xf)) +
-                  fromCharCode(0x80 | ((c >> 6) & 0x3f)) +
-                  fromCharCode(0x80 | (c & 0x3f));
+        results[results.length] = 0xe0 | ((c >> 12) & 0xf);
+        results[results.length] = 0x80 | ((c >> 6) & 0x3f);
+        results[results.length] = 0x80 | (c & 0x3f);
+      } else if (c < 0x200000) {
+        results[results.length] = 0xf0 | ((c >> 18) & 0xf);
+        results[results.length] = 0x80 | ((c >> 12) & 0x3f);
+        results[results.length] = 0x80 | ((c >> 6) & 0x3f);
+        results[results.length] = 0x80 | (c & 0x3f);
       }
     }
 
-    return result;
+    return bufferToString_fast(results);
   }
+
 
   // UTF-8 to UTF-16
   function toUTF16(data) {
-    var result = '';
+    var results = [];
     var i = 0;
     var len = data.length;
-    var n, c, c2, c3, c4;
+    var n, c, c2, c3, c4, code;
 
     while (i < len) {
       c = data.charCodeAt(i++);
       n = c >> 4;
       if (n >= 0 && n <= 7) {
-        result += fromCharCode(c);
-      } else if (n >= 12 && n <= 13) {
+        code = c;
+      } else if (n === 12 || n === 13) {
         c2 = data.charCodeAt(i++);
-        result += fromCharCode(((c & 0x1f) << 6) | (c2 & 0x3f));
+        code = ((c & 0x1f) << 6) | (c2 & 0x3f);
       } else if (n === 14) {
         c2 = data.charCodeAt(i++);
         c3 = data.charCodeAt(i++);
-        result += fromCharCode(((c & 0xf) << 12) |
-                               ((c2 & 0x3f) << 6) |
-                               (c3 & 0x3f));
+        code = ((c & 0x0f) << 12) |
+               ((c2 & 0x3f) << 6) |
+                (c3 & 0x3f);
+      } else if (n === 15) {
+        c2 = data.charCodeAt(i++);
+        c3 = data.charCodeAt(i++);
+        c4 = data.charCodeAt(i++);
+        code = ((c & 0x7) << 18)   |
+               ((c2 & 0x3f) << 12) |
+               ((c3 & 0x3f) << 6)  |
+                (c4 & 0x3f);
+      }
+
+      if (code <= 0xffff) {
+        results[results.length] = code;
+      } else {
+        // Split in surrogate halves
+        code -= 0x10000;
+        results[results.length] = (code >> 10) + 0xd800; // High surrogate
+        results[results.length] = (code % 0x400) + 0xdc00; // Low surrogate
       }
     }
 
-    return result;
+    return bufferToString_fast(results);
   }
 
 
   // UTF-8 byte length
   function byteLength(data, encoding) {
     var length = 0;
-    var c;
+    var c, c2;
 
     for (var i = 0, len = data.length; i < len; i++) {
       c = data.charCodeAt(i);
+
+      if ((c & 0xfc00) === 0xd800 && (i + 1 < len)) {
+        c2 = data.charCodeAt(i + 1);
+        if ((c2 & 0xfc00) === 0xdc00) {
+          c = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+          i++;
+        }
+      }
 
       if (c < 0x80) {
         length++;
       } else if (c < 0x800) {
         length += 2;
-      } else {
+      } else if (c < 0x10000) {
         length += 3;
+      } else {
+        length += 4;
       }
     }
 
