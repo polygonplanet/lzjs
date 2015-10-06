@@ -2,7 +2,7 @@
  * lzjs
  *
  * @description  Compression by LZ algorithm in JavaScript.
- * @fileOverview Data compression library
+ * @fileoverview Data compression library
  * @version      1.2.5
  * @date         2015-10-04
  * @link         https://github.com/polygonplanet/lzjs
@@ -53,6 +53,10 @@
     } catch (e) {}
   }
 
+  // Function.prototype.apply stack max range
+  var APPLY_BUFFER_SIZE = 65533;
+  var APPLY_BUFFER_SIZE_OK = null;
+
   // IE has bug of String.prototype.lastIndexOf when second argument specified.
   var STRING_LASTINDEXOF_BUG = false;
   if ('abc\u307b\u3052'.lastIndexOf('\u307b\u3052', 1) !== -1) {
@@ -88,9 +92,6 @@
   // Sliding Window
   var WINDOW_MAX = 1024;
   var WINDOW_BUFFER_MAX = 304; // maximum 304
-
-  // fn.apply stack max range
-  var APPLY_BUFFER_SIZE = 65533;
 
   // Chunk buffer length
   var COMPRESS_CHUNK_SIZE = APPLY_BUFFER_SIZE;
@@ -144,7 +145,7 @@
       return table;
     },
     _onData: function(buffer, length) {
-      var data = bufferToString(buffer, length);
+      var data = bufferToString_fast(buffer, length);
 
       if (this._onDataCallback) {
         this._onDataCallback(data);
@@ -379,17 +380,17 @@
       if (this._onDataCallback) {
         if (ended) {
           data = this._result;
-          this._result = null;
+          this._result = [];
         } else {
           var len = DECOMPRESS_CHUNK_SIZE - WINDOW_MAX;
+          data = this._result.slice(WINDOW_MAX, WINDOW_MAX + len);
 
-          data = this._result.substr(WINDOW_MAX, len);
-          this._result = this._result.slice(0, WINDOW_MAX) +
-                         this._result.substring(WINDOW_MAX + len);
+          this._result = this._result.slice(0, WINDOW_MAX).concat(
+                         this._result.slice(WINDOW_MAX + len));
         }
 
         if (data.length > 0) {
-          this._onDataCallback(data);
+          this._onDataCallback(bufferToString_fast(data));
         }
       }
     },
@@ -403,7 +404,7 @@
         return '';
       }
 
-      this._result = createWindow();
+      this._result = stringToArray(createWindow());
       var result = '';
       var table = this._createTable();
 
@@ -412,8 +413,8 @@
       var len = data.length;
       var offset = 0;
 
-      var c, c2, c3;
-      var code, pos, length, shrink, sub;
+      var i, c, c2, c3;
+      var code, pos, length, sub, subLen, expandLen;
 
       for (; offset < len; offset++) {
         c = table[data.charAt(offset)];
@@ -430,7 +431,7 @@
             c3 = table[data.charAt(++offset)];
             code = c3 * UNICODE_CHAR_MAX + c + UNICODE_BUFFER_MAX * index;
           }
-          this._result += fromCharCode(code);
+          this._result[this._result.length] = code;
         } else if (c < LATIN_DECODE_MAX) {
           // Latin starting point
           index = c - DECODE_MAX;
@@ -451,15 +452,22 @@
             length = 2;
           }
 
-          sub = this._result.slice(-WINDOW_BUFFER_MAX)
-            .slice(-pos).substring(0, length);
+          sub = this._result.slice(-pos);
+          if (sub.length > length) {
+            sub.length = length;
+          }
+          subLen = sub.length;
 
-          if (sub) {
-            shrink = '';
-            while (shrink.length < length) {
-              shrink += sub;
+          if (sub.length > 0) {
+            expandLen = 0;
+            while (expandLen < length) {
+              for (i = 0; i < subLen; i++) {
+                this._result[this._result.length] = sub[i];
+                if (++expandLen >= length) {
+                  break;
+                }
+              }
             }
-            this._result += shrink.substring(0, length);
           }
           index = null;
         }
@@ -469,13 +477,13 @@
         }
       }
 
-      this._result = this._result.substring(WINDOW_MAX);
+      this._result = this._result.slice(WINDOW_MAX);
       this._onData(true);
-
       this._onEnd();
-      result = this._result;
+
+      result = bufferToString_fast(this._result);
       this._result = null;
-      return result === null ? '' : result;
+      return result;
     }
   };
 
@@ -765,20 +773,84 @@
   }
 
 
-  function bufferToString(buffer, length) {
-    if (CAN_CHARCODE_APPLY && CAN_CHARCODE_APPLY_TYPED &&
-        length < APPLY_BUFFER_SIZE) {
-      try {
-        return fromCharCode.apply(null, truncateBuffer(buffer, length));
-      } catch (e) {
-        // Ignore RangeError: arguments too large
+  function bufferToString_fast(buffer, length) {
+    if (length == null) {
+      length = buffer.length;
+    } else {
+      buffer = truncateBuffer(buffer, length);
+    }
+
+    if (CAN_CHARCODE_APPLY && CAN_CHARCODE_APPLY_TYPED) {
+      if (length < APPLY_BUFFER_SIZE) {
+        if (APPLY_BUFFER_SIZE_OK) {
+          return fromCharCode.apply(null, buffer);
+        }
+
+        if (APPLY_BUFFER_SIZE_OK === null) {
+          try {
+            var s = fromCharCode.apply(null, buffer);
+            if (length > APPLY_BUFFER_SIZE) {
+              APPLY_BUFFER_SIZE_OK = true;
+            }
+            return s;
+          } catch (e) {
+            // Ignore RangeError: arguments too large
+            APPLY_BUFFER_SIZE_OK = false;
+          }
+        }
       }
     }
 
+    return bufferToString_chunked(buffer);
+  }
+
+
+  function bufferToString_chunked(buffer) {
     var string = '';
+    var length = buffer.length;
+    var i = 0;
+    var sub;
+
+    while (i < length) {
+      if (buffer.subarray) {
+        sub = buffer.subarray(i, i + APPLY_BUFFER_SIZE);
+      } else {
+        sub = buffer.slice(i, i + APPLY_BUFFER_SIZE);
+      }
+      i += APPLY_BUFFER_SIZE;
+
+      if (APPLY_BUFFER_SIZE_OK) {
+        string += fromCharCode.apply(null, sub);
+        continue;
+      }
+
+      if (APPLY_BUFFER_SIZE_OK === null) {
+        try {
+          string += fromCharCode.apply(null, sub);
+          if (sub.length > APPLY_BUFFER_SIZE) {
+            APPLY_BUFFER_SIZE_OK = true;
+          }
+          continue;
+        } catch (e) {
+          APPLY_BUFFER_SIZE_OK = false;
+        }
+      }
+
+      return bufferToString_slow(buffer);
+    }
+
+    return string;
+  }
+
+
+  function bufferToString_slow(buffer) {
+    var string = '';
+    var length = buffer.length;
+
     for (var i = 0; i < length; i++) {
       string += fromCharCode(buffer[i]);
     }
+
     return string;
   }
 
@@ -802,6 +874,18 @@
       case 8: return new Uint8Array(size);
       case 16: return new Uint16Array(size);
     }
+  }
+
+
+  function stringToArray(string) {
+    var array = [];
+    var len = string && string.length;
+
+    for (var i = 0; i < len; i++) {
+      array[i] = string.charCodeAt(i);
+    }
+
+    return array;
   }
 
 
