@@ -27,7 +27,7 @@
     "base64",
     "string"
   ],
-  "author": "polygon planet",
+  "author": "polygonplanet",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/polygonplanet/lzjs/issues"
