@@ -6,9 +6,8 @@
   "directories": {
     "test": "tests"
   },
-  "dependencies": {},
   "devDependencies": {
-    "mocha": "*"
+    "mocha": "^10.1.0"
   },
   "scripts": {
     "test": "mocha tests/test"
