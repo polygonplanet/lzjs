@@ -1,0 +1,5 @@
+**/.*
+docs/
+tests/
+node_modules/
+.npmignore
