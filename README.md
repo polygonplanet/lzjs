@@ -1,7 +1,7 @@
 lzjs
 ========
 
-[![GitHub Actions Build Status](https://github.com/polygonplanet/lzjsactions/workflows/ci.yml/badge.svg)](https://github.com/polygonplanet/lzjs/actions)
+[![GitHub Actions Build Status](https://github.com/polygonplanet/lzjs/actions/workflows/ci.yml/badge.svg)](https://github.com/polygonplanet/lzjs/actions)
 
 Compression by LZ algorithm in JavaScript.
 
