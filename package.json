@@ -10,7 +10,7 @@
     "mocha": "^10.1.0"
   },
   "scripts": {
-    "test": "mocha tests/test"
+    "test": "eslint . && mocha tests/test.js"
   },
   "bin": {
     "lzjs": "bin/lzjs"
