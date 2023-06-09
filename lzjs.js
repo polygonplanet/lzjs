@@ -87,7 +87,7 @@
   var TABLE_LENGTH = TABLE.length;
   var TABLE_DIFF = Math.max(TABLE_LENGTH, 62) - Math.min(TABLE_LENGTH, 62);
   var BUFFER_MAX = TABLE_LENGTH - 1;
-  var TABLE_BUFFER_MAX = BUFFER_MAX * (BUFFER_MAX + 1);
+  // var TABLE_BUFFER_MAX = BUFFER_MAX * (BUFFER_MAX + 1);
 
   // Sliding Window
   var WINDOW_MAX = 1024;
@@ -386,7 +386,7 @@
           data = this._result.slice(WINDOW_MAX, WINDOW_MAX + len);
 
           this._result = this._result.slice(0, WINDOW_MAX).concat(
-                         this._result.slice(WINDOW_MAX + len));
+            this._result.slice(WINDOW_MAX + len));
         }
 
         if (data.length > 0) {
@@ -518,7 +518,7 @@
       var dict = [];
       var dictLen = 0;
 
-      var c, s, key, index, bitLen, length;
+      var c, key, bitLen, length;
 
       if (len > 0) {
         buffer = c = data.charAt(i++);
@@ -852,16 +852,6 @@
     }
 
     return string;
-  }
-
-
-  function stringToBuffer(string) {
-    var length = string.length;
-    var buffer = createBuffer(16, length);
-    for (var i = 0; i < length; i++) {
-      buffer[i] = string.charCodeAt(i);
-    }
-    return buffer;
   }
 
 
