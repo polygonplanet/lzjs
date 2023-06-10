@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-'use strict';
-
+/* eslint-disable no-console */
 var lzjs = require('../lzjs');
 var path = require('path');
 var fs = require('fs');
@@ -47,7 +46,6 @@ switch (command) {
     break;
 }
 
-
 function compress(filename) {
   if (filename == null || filename.length === 0) {
     throw new Error('Missing argument <file_name>.');
@@ -71,7 +69,6 @@ function compress(filename) {
   fs.writeFileSync(outputName, compressed);
 }
 
-
 function decompress(filename) {
   if (filename == null || filename.length === 0) {
     throw new Error('Missing argument <file_name>.');
@@ -94,7 +91,6 @@ function decompress(filename) {
   var decompressed = lzjs.decompress(data);
   fs.writeFileSync(outputName, decompressed);
 }
-
 
 function help() {
   console.log('Usage: lzjs <command> [file_name]');

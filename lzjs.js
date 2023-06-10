@@ -9,10 +9,7 @@
  * @copyright    Copyright (c) 2014 polygonplanet <polygon.planet.aqua@gmail.com>
  * @license      MIT
  */
-
-/*jshint bitwise:false, eqnull:true */
 (function(name, context, factory) {
-
   // Supports UMD. AMD, CommonJS/Node.js and browser context
   if (typeof exports !== 'undefined') {
     if (typeof module !== 'undefined' && module.exports) {
@@ -25,17 +22,12 @@
   } else {
     context[name] = factory();
   }
-
 }('lzjs', this, function() {
-  'use strict';
-
   var fromCharCode = String.fromCharCode;
   var hasOwnProperty = Object.prototype.hasOwnProperty;
+  var HAS_TYPED = typeof Uint8Array !== 'undefined' && typeof Uint16Array !== 'undefined';
 
-  var HAS_TYPED = typeof Uint8Array !== 'undefined' &&
-                  typeof Uint16Array !== 'undefined';
-
-  // Test for String.fromCharCode.apply.
+  // Test for String.fromCharCode.apply
   var CAN_CHARCODE_APPLY = false;
   var CAN_CHARCODE_APPLY_TYPED = false;
 
@@ -53,11 +45,11 @@
     } catch (e) {}
   }
 
-  // Function.prototype.apply stack max range
+  // Stack maximum range of Function.prototype.apply
   var APPLY_BUFFER_SIZE = 65533;
   var APPLY_BUFFER_SIZE_OK = null;
 
-  // IE has bug of String.prototype.lastIndexOf when second argument specified.
+  // IE has a bug in String.prototype.lastIndexOf when the second argument is specified
   var STRING_LASTINDEXOF_BUG = false;
   if ('abc\u307b\u3052'.lastIndexOf('\u307b\u3052', 1) !== -1) {
     STRING_LASTINDEXOF_BUG = true;
@@ -120,8 +112,8 @@
   var COMPRESS_FIXED_START = COMPRESS_START + 5;
   var COMPRESS_INDEX = COMPRESS_FIXED_START + 5; // 59
 
-
-  // LZSS Compressor
+  // LZSS Compressor is based on the lzbase62 v1.4.6 (MIT license) compression algorithm
+  // https://github.com/polygonplanet/lzbase62
   function LZSSCompressor(options) {
     this._init(options);
   }
@@ -181,7 +173,7 @@
         if (i === 2) {
           s = data.charAt(offset) + data.charAt(offset + 1);
 
-          // Fast check by pre-match for the slow lastIndexOf.
+          // Faster check by pre-matching slow lastIndexOf
           index = win.indexOf(s);
           if (!~index || index > limit) {
             break;
@@ -353,7 +345,6 @@
     }
   };
 
-
   // LZSS Decompressor
   function LZSSDecompressor(options) {
     this._init(options);
@@ -486,7 +477,6 @@
       return result;
     }
   };
-
 
   // LZW Compression
   function LZW(options) {
@@ -629,7 +619,6 @@
     }
   };
 
-
   // LZJS Compression
   function LZJS(options) {
     this._init(options);
@@ -673,7 +662,7 @@
           }
         }
       } else if (dataBytes > len && asciiLimitBytes < len) {
-        // String that is included most of the ASCII.
+        // String consisting mostly of ASCII
         type = 'U';
         result = new LZW(options).compress(toUTF8(data));
         if (result === false) {
@@ -685,7 +674,7 @@
           }
         }
       } else {
-        // Unicode string
+        // String consisting mostly of non-ASCII
         type = 'S';
         result = new LZSSCompressor(options).compress(data);
         if (result === false) {
@@ -734,7 +723,6 @@
     }
   };
 
-
   // Create Sliding window
   function createWindow() {
     var alpha = 'abcdefghijklmnopqrstuvwxyz';
@@ -758,7 +746,6 @@
     return win;
   }
 
-
   function truncateBuffer(buffer, length) {
     if (buffer.length === length) {
       return buffer;
@@ -771,7 +758,6 @@
     buffer.length = length;
     return buffer;
   }
-
 
   function bufferToString_fast(buffer, length) {
     if (length == null) {
@@ -803,7 +789,6 @@
 
     return bufferToString_chunked(buffer);
   }
-
 
   function bufferToString_chunked(buffer) {
     var string = '';
@@ -842,7 +827,6 @@
     return string;
   }
 
-
   function bufferToString_slow(buffer) {
     var string = '';
     var length = buffer.length;
@@ -853,7 +837,6 @@
 
     return string;
   }
-
 
   function createBuffer(bits, size) {
     if (!HAS_TYPED) {
@@ -866,7 +849,6 @@
     }
   }
 
-
   function stringToArray(string) {
     var array = [];
     var len = string && string.length;
@@ -877,7 +859,6 @@
 
     return array;
   }
-
 
   // UTF-16 to UTF-8
   function toUTF8(data) {
@@ -918,7 +899,6 @@
 
     return bufferToString_fast(results);
   }
-
 
   // UTF-8 to UTF-16
   function toUTF16(data) {
@@ -964,7 +944,6 @@
     return bufferToString_fast(results);
   }
 
-
   // UTF-8 byte length
   function byteLength(data, encoding) {
     var length = 0;
@@ -995,8 +974,13 @@
     return length;
   }
 
-
-  // via http://www.onicos.com/staff/iz/amuse/javascript/expert/base64.txt
+  // Base64 from http://www.onicos.com/staff/iz/amuse/javascript/expert/base64.txt
+  /*
+   * Copyright (C) 1999 Masanao Izumo <iz@onicos.co.jp>
+   * Version: 1.0
+   * LastModified: Dec 25 1999
+   * This library is free.  You can redistribute it and/or modify it.
+   */
   var base64EncodeChars =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -1045,7 +1029,6 @@
 
     return out;
   }
-
 
   function base64decode(str) {
     var c1, c2, c3, c4;
@@ -1105,7 +1088,6 @@
 
     return out;
   }
-
 
   /**
    * @name lzjs

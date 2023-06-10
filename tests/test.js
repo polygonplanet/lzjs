@@ -1,12 +1,8 @@
-'use strict';
-
 var lzjs = require('../lzjs');
-
 var assert = require('assert');
 var fs = require('fs');
 
 describe('lzjs test', function() {
-
   var tests = {};
 
   before(function(done) {
