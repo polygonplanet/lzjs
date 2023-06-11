@@ -1,12 +1,12 @@
-var lzjs = require('../lzjs');
-var assert = require('assert');
-var fs = require('fs');
+const lzjs = require('../lzjs');
+const assert = require('assert');
+const fs = require('fs');
 
-describe('lzjs test', function() {
-  var tests = {};
+describe('lzjs test', () => {
+  const tests = {};
 
-  before(function(done) {
-    var i;
+  before((done) => {
+    let i;
 
     tests.unicode = '';
     for (i = 0; i <= 0xffff; i++) {
@@ -19,7 +19,7 @@ describe('lzjs test', function() {
     }
 
     tests.randoms = [];
-    var s, code;
+    let s, code;
     for (var j = 0; j < 3; j++) {
       s = '';
       for (i = 0; i <= 0xffff; i++) {
@@ -30,8 +30,8 @@ describe('lzjs test', function() {
     }
 
     tests.bits = [];
-    var max = 60 * (60 + 1);
-    var bits = [59, 60, 61, max - 1, max, max + 1];
+    const max = 60 * (60 + 1);
+    const bits = [59, 60, 61, max - 1, max, max + 1];
     for (i = 0; i < bits.length; i++) {
       tests.bits.push(new Array(bits[i] + 1).join('a'));
     }
@@ -53,126 +53,126 @@ describe('lzjs test', function() {
     done();
   });
 
-  describe('compress/decompress', function() {
-    it('ascii string', function() {
+  describe('compress/decompress', () => {
+    it('ascii string', () => {
       assert(tests.hello.length > 0);
-      var compressed = lzjs.compress(tests.hello);
+      const compressed = lzjs.compress(tests.hello);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, tests.hello);
     });
 
-    it('ascii string*5', function() {
-      var s = new Array(6).join(tests.hello);
+    it('ascii string*5', () => {
+      const s = new Array(6).join(tests.hello);
       assert(s.length > 0);
-      var compressed = lzjs.compress(s);
+      const compressed = lzjs.compress(s);
       assert(compressed.length > 0);
       assert(s.length > compressed.length);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, s);
     });
 
-    it('unicode [U+0000 - U+FFFF]', function() {
+    it('unicode [U+0000 - U+FFFF]', () => {
       assert(tests.unicode.length > 0);
-      var compressed = lzjs.compress(tests.unicode);
+      const compressed = lzjs.compress(tests.unicode);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, tests.unicode);
     });
 
-    it('unicode [U+0000 - U+FFFF]*2', function() {
-      var s = tests.unicode + tests.unicode;
+    it('unicode [U+0000 - U+FFFF]*2', () => {
+      const s = tests.unicode + tests.unicode;
       assert(s.length > 0);
-      var compressed = lzjs.compress(s);
+      const compressed = lzjs.compress(s);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, s);
       tests.unicode = null;
     });
 
-    it('unicode [U+0000 - U+FFFF] reverse', function() {
+    it('unicode [U+0000 - U+FFFF] reverse', () => {
       assert(tests.unicodeReverse.length > 0);
-      var compressed = lzjs.compress(tests.unicodeReverse);
+      const compressed = lzjs.compress(tests.unicodeReverse);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, tests.unicodeReverse);
     });
 
-    it('unicode chars', function() {
-      tests.chars.forEach(function(c) {
+    it('unicode chars', () => {
+      tests.chars.forEach((c) => {
         assert(c.length > 0);
-        var compressed = lzjs.compress(c);
+        const compressed = lzjs.compress(c);
         assert(compressed.length > 0);
-        var decompressed = lzjs.decompress(compressed);
+        const decompressed = lzjs.decompress(compressed);
         assert.equal(decompressed, c);
       });
       tests.chars = null;
     });
 
-    it('random chars', function() {
-      var randomString = tests.randoms[0];
+    it('random chars', () => {
+      const randomString = tests.randoms[0];
       assert(randomString.length > 0);
-      var compressed = lzjs.compress(randomString);
+      const compressed = lzjs.compress(randomString);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, randomString);
     });
 
-    it('random chars 2', function() {
-      var randomString = tests.randoms[1];
+    it('random chars 2', () => {
+      const randomString = tests.randoms[1];
       assert(randomString.length > 0);
-      var compressed = lzjs.compress(randomString);
+      const compressed = lzjs.compress(randomString);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, randomString);
     });
 
-    it('random chars 3', function() {
-      var randomString = tests.randoms[2];
+    it('random chars 3', () => {
+      const randomString = tests.randoms[2];
       assert(randomString.length > 0);
-      var compressed = lzjs.compress(randomString);
+      const compressed = lzjs.compress(randomString);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, randomString);
     });
 
-    it('bits', function() {
-      tests.bits.forEach(function(c) {
+    it('bits', () => {
+      tests.bits.forEach((c) => {
         assert(c.length > 0);
-        var compressed = lzjs.compress(c);
+        const compressed = lzjs.compress(c);
         assert(compressed.length > 0);
-        var decompressed = lzjs.decompress(compressed);
+        const decompressed = lzjs.decompress(compressed);
         assert.equal(decompressed, c);
       });
       tests.bits = null;
     });
 
-    it('unicode bits', function() {
-      tests.unicodeBits.forEach(function(c) {
+    it('unicode bits', () => {
+      tests.unicodeBits.forEach((c) => {
         assert(c.length > 0);
-        var compressed = lzjs.compress(c);
+        const compressed = lzjs.compress(c);
         assert(compressed.length > 0);
-        var decompressed = lzjs.decompress(compressed);
+        const decompressed = lzjs.decompress(compressed);
         assert.equal(decompressed, c);
       });
       tests.unicodeBits = null;
     });
 
-    it('this source code', function() {
-      var s = new Array(5).join(tests.code.toString());
+    it('this source code', () => {
+      const s = new Array(5).join(tests.code.toString());
       assert(s.length > 0);
-      var compressed = lzjs.compress(s);
+      const compressed = lzjs.compress(s);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, s);
     });
 
-    it('this source code (Buffer)', function() {
-      var buffer = tests.code;
+    it('this source code (Buffer)', () => {
+      const buffer = tests.code;
       assert(buffer.length > 0);
-      var compressed = lzjs.compress(buffer);
+      const compressed = lzjs.compress(buffer);
       assert(compressed.length > 0);
-      var decompressed = lzjs.decompress(compressed);
+      const decompressed = lzjs.decompress(compressed);
       assert.equal(decompressed, buffer.toString());
     });
   });
