@@ -23,7 +23,7 @@ describe('lzjs test', () => {
     for (var j = 0; j < 3; j++) {
       s = '';
       for (i = 0; i <= 0xffff; i++) {
-        code = ~~(Math.random() * (0xffff + 1));
+        code = Math.floor(Math.random() * (0xffff + 1));
         s += String.fromCharCode(code);
       }
       tests.randoms.push(s);
