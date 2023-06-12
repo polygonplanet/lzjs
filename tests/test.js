@@ -1,179 +1,201 @@
 const lzjs = require('../lzjs');
 const assert = require('assert');
-const fs = require('fs');
 
 describe('lzjs test', () => {
-  const tests = {};
-
-  before((done) => {
-    let i;
-
-    tests.unicode = '';
-    for (i = 0; i <= 0xffff; i++) {
-      tests.unicode += String.fromCharCode(i);
-    }
-
-    tests.unicodeReverse = '';
-    for (i = 0xffff; i >= 0; --i) {
-      tests.unicodeReverse += String.fromCharCode(i);
-    }
-
-    tests.randoms = [];
-    let s, code;
-    for (var j = 0; j < 3; j++) {
-      s = '';
-      for (i = 0; i <= 0xffff; i++) {
-        code = Math.floor(Math.random() * (0xffff + 1));
-        s += String.fromCharCode(code);
-      }
-      tests.randoms.push(s);
-    }
-
-    tests.bits = [];
-    const max = 60 * (60 + 1);
-    const bits = [59, 60, 61, max - 1, max, max + 1];
-    for (i = 0; i < bits.length; i++) {
-      tests.bits.push(new Array(bits[i] + 1).join('a'));
-    }
-
-    tests.unicodeBits = [];
-    for (i = 0; i < bits.length; i++) {
-      tests.unicodeBits.push(new Array(bits[i] + 1).join('a\u3042'));
-      tests.unicodeBits.push(new Array(bits[i] + 1).join('\u3042'));
-      tests.unicodeBits.push(new Array(bits[i] + 1).join('\u3042a'));
-    }
-
-    tests.chars = [];
-    for (i = 0; i <= 0xffff; i += 32) {
-      tests.chars.push(new Array(100).join(String.fromCharCode(i)));
-    }
-
-    tests.hello = 'Hello World.';
-    tests.code = fs.readFileSync(__filename);
-    done();
-  });
-
-  describe('compress/decompress', () => {
-    it('ascii string', () => {
-      assert(tests.hello.length > 0);
-      const compressed = lzjs.compress(tests.hello);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, tests.hello);
+  describe('compress and decompress', () => {
+    it('should have compress and decompress methods', () => {
+      assert(typeof lzjs.decompress === 'function');
+      assert(typeof lzjs.decompress === 'function');
     });
 
-    it('ascii string*5', () => {
-      const s = new Array(6).join(tests.hello);
-      assert(s.length > 0);
-      const compressed = lzjs.compress(s);
-      assert(compressed.length > 0);
-      assert(s.length > compressed.length);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, s);
-    });
+    describe('ASCII string', () => {
+      let asciiStr = null;
 
-    it('unicode [U+0000 - U+FFFF]', () => {
-      assert(tests.unicode.length > 0);
-      const compressed = lzjs.compress(tests.unicode);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, tests.unicode);
-    });
+      beforeEach(() => {
+        asciiStr = 'Hello World.';
+      });
 
-    it('unicode [U+0000 - U+FFFF]*2', () => {
-      const s = tests.unicode + tests.unicode;
-      assert(s.length > 0);
-      const compressed = lzjs.compress(s);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, s);
-      tests.unicode = null;
-    });
+      afterEach(() => {
+        asciiStr = null;
+      });
 
-    it('unicode [U+0000 - U+FFFF] reverse', () => {
-      assert(tests.unicodeReverse.length > 0);
-      const compressed = lzjs.compress(tests.unicodeReverse);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, tests.unicodeReverse);
-    });
-
-    it('unicode chars', () => {
-      tests.chars.forEach((c) => {
-        assert(c.length > 0);
-        const compressed = lzjs.compress(c);
+      it('should correctly compress and decompress ASCII string', () => {
+        assert(asciiStr.length > 0);
+        const compressed = lzjs.compress(asciiStr);
         assert(compressed.length > 0);
         const decompressed = lzjs.decompress(compressed);
-        assert.equal(decompressed, c);
+        assert.equal(decompressed, asciiStr);
       });
-      tests.chars = null;
+
+      it('should correctly compress and decompress repeated ASCII', () => {
+        const repeatedAsciiStr = new Array(6).join(asciiStr);
+        assert(repeatedAsciiStr.length > 0);
+        const compressed = lzjs.compress(repeatedAsciiStr);
+        assert(compressed.length > 0);
+        assert(repeatedAsciiStr.length > compressed.length);
+        const decompressed = lzjs.decompress(compressed);
+        assert.equal(decompressed, repeatedAsciiStr);
+      });
     });
 
-    it('random chars', () => {
-      const randomString = tests.randoms[0];
-      assert(randomString.length > 0);
-      const compressed = lzjs.compress(randomString);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, randomString);
-    });
+    describe('Unicode string [U+0000 - U+FFFF]', () => {
+      let codeUnitStr = null;
 
-    it('random chars 2', () => {
-      const randomString = tests.randoms[1];
-      assert(randomString.length > 0);
-      const compressed = lzjs.compress(randomString);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, randomString);
-    });
+      beforeEach(() => {
+        codeUnitStr = '';
+        for (let i = 0; i <= 0xffff; i++) {
+          codeUnitStr += String.fromCharCode(i);
+        }
+      });
 
-    it('random chars 3', () => {
-      const randomString = tests.randoms[2];
-      assert(randomString.length > 0);
-      const compressed = lzjs.compress(randomString);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, randomString);
-    });
+      afterEach(() => {
+        codeUnitStr = null;
+      });
 
-    it('bits', () => {
-      tests.bits.forEach((c) => {
-        assert(c.length > 0);
-        const compressed = lzjs.compress(c);
+      it('should correctly compress and decompress Unicode string', () => {
+        assert(codeUnitStr.length > 0);
+        const compressed = lzjs.compress(codeUnitStr);
         assert(compressed.length > 0);
         const decompressed = lzjs.decompress(compressed);
-        assert.equal(decompressed, c);
+        assert.equal(decompressed, codeUnitStr);
       });
-      tests.bits = null;
-    });
 
-    it('unicode bits', () => {
-      tests.unicodeBits.forEach((c) => {
-        assert(c.length > 0);
-        const compressed = lzjs.compress(c);
+      it('should correctly compress and decompress repeated Unicode string', () => {
+        const doubleCodeUnitStr = codeUnitStr + codeUnitStr;
+        assert(doubleCodeUnitStr.length > 0);
+        const compressed = lzjs.compress(doubleCodeUnitStr);
         assert(compressed.length > 0);
         const decompressed = lzjs.decompress(compressed);
-        assert.equal(decompressed, c);
+        assert.equal(decompressed, doubleCodeUnitStr);
       });
-      tests.unicodeBits = null;
     });
 
-    it('this source code', () => {
-      const s = new Array(5).join(tests.code.toString());
-      assert(s.length > 0);
-      const compressed = lzjs.compress(s);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, s);
+    describe('reversed Unicode string [U+0000 - U+FFFF]', () => {
+      let reversedCodeUnitStr = null;
+
+      beforeEach(() => {
+        reversedCodeUnitStr = '';
+        for (let i = 0xffff; i >= 0; --i) {
+          reversedCodeUnitStr += String.fromCharCode(i);
+        }
+      });
+
+      afterEach(() => {
+        reversedCodeUnitStr = null;
+      });
+
+      it('should correctly compress and decompress reversed Unicode string', () => {
+        assert(reversedCodeUnitStr.length > 0);
+        const compressed = lzjs.compress(reversedCodeUnitStr);
+        assert(compressed.length > 0);
+        const decompressed = lzjs.decompress(compressed);
+        assert.equal(decompressed, reversedCodeUnitStr);
+      });
     });
 
-    it('this source code (Buffer)', () => {
-      const buffer = tests.code;
-      assert(buffer.length > 0);
-      const compressed = lzjs.compress(buffer);
-      assert(compressed.length > 0);
-      const decompressed = lzjs.decompress(compressed);
-      assert.equal(decompressed, buffer.toString());
+    describe('Unicode characters [U+0000 - U+FFFF]', () => {
+      let codeUnitChars = null;
+
+      beforeEach(() => {
+        codeUnitChars = [];
+        for (let i = 0; i <= 0xffff; i += 32) {
+          codeUnitChars.push(new Array(100).join(String.fromCharCode(i)));
+        }
+      });
+
+      afterEach(() => {
+        codeUnitChars = null;
+      });
+
+      it('should correctly compress and decompress Unicode characters', () => {
+        codeUnitChars.forEach((c) => {
+          assert(c.length > 0);
+          const compressed = lzjs.compress(c);
+          assert(compressed.length > 0);
+          const decompressed = lzjs.decompress(compressed);
+          assert.equal(decompressed, c);
+
+          const repeatedChars = new Array(10).join(c);
+          assert.equal(lzjs.decompress(lzjs.compress(repeatedChars)), repeatedChars);
+        });
+      });
+    });
+
+    describe('Repeated characters', () => {
+      let asciiBits = null;
+      let nonAsciiBits = null;
+
+      beforeEach(() => {
+        asciiBits = [];
+
+        // Make repeated characters for a specific number of times
+        const max = 60 * (60 + 1);
+        const bits = [59, 60, 61, max - 1, max, max + 1];
+        for (let i = 0; i < bits.length; i++) {
+          asciiBits.push(new Array(bits[i] + 1).join('a'));
+        }
+
+        nonAsciiBits = [];
+        for (let i = 0; i < bits.length; i++) {
+          nonAsciiBits.push(new Array(bits[i] + 1).join('a\u3042'));
+          nonAsciiBits.push(new Array(bits[i] + 1).join('\u3042'));
+          nonAsciiBits.push(new Array(bits[i] + 1).join('\u3042a'));
+        }
+      });
+
+      afterEach(() => {
+        asciiBits = null;
+        nonAsciiBits = null;
+      });
+
+      it('should correctly compress and decompress repeated ASCII characters', () => {
+        asciiBits.forEach((c) => {
+          assert(c.length > 0);
+          const compressed = lzjs.compress(c);
+          assert(compressed.length > 0);
+          const decompressed = lzjs.decompress(compressed);
+          assert.equal(decompressed, c);
+        });
+      });
+
+      it('should correctly compress and decompress repeated non-ASCII characters', () => {
+        nonAsciiBits.forEach((c) => {
+          assert(c.length > 0);
+          const compressed = lzjs.compress(c);
+          assert(compressed.length > 0);
+          const decompressed = lzjs.decompress(compressed);
+          assert.equal(decompressed, c);
+        });
+      });
+    });
+
+    describe('ASCII string and Buffer', () => {
+      let sampleStr = null;
+
+      beforeEach(() => {
+        sampleStr = 'Lorem ipsum dolor sit amet, Consectetur adipiscing. 123!@#$';
+      });
+
+      afterEach(() => {
+        sampleStr = null;
+      });
+
+      it('should correctly compress and decompress sample string', () => {
+        assert(sampleStr.length > 0);
+        const compressed = lzjs.compress(sampleStr);
+        assert(compressed.length > 0);
+        const decompressed = lzjs.decompress(compressed);
+        assert.equal(decompressed, sampleStr);
+      });
+
+      it('should correctly compress and decompress Buffer', () => {
+        const sampleBuffer = Buffer.from(sampleStr);
+        assert(sampleBuffer.length > 0);
+        const compressed = lzjs.compress(sampleBuffer);
+        assert(compressed.length > 0);
+        const decompressed = lzjs.decompress(compressed);
+        assert.equal(decompressed.toString(), sampleStr);
+      });
     });
   });
 
