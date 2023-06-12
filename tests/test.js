@@ -176,4 +176,20 @@ describe('lzjs test', () => {
       assert.equal(decompressed, buffer.toString());
     });
   });
+
+  describe('compressToBase64 and decompressFromBase64', () => {
+    it('should have compressToBase64 and decompressFromBase64 methods', () => {
+      assert(typeof lzjs.compressToBase64 === 'function');
+      assert(typeof lzjs.decompressFromBase64 === 'function');
+    });
+
+    it('should compress data to base64 string and decompress to original data', () => {
+      const data = 'hello hello hello';
+      const compressed = lzjs.compressToBase64(data);
+      assert.equal(compressed, 'V2hlbGxvIMKAwoLChMKGwoM=');
+
+      const decompressed = lzjs.decompressFromBase64(compressed);
+      assert.equal(decompressed, data);
+    });
+  });
 });
