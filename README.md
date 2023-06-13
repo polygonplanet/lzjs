@@ -51,8 +51,8 @@ When the script is loaded, the `lzjs` object is defined in the global scope (i.e
 
 * [compress](#lzjscompressdata-options)
 * [decompress](#lzjsdecompressdata-options)
-* [compressToBase64](#compressToBase64data)
-* [decompressFromBase64](#decompressFromBase64data)
+* [compressToBase64](#lzjscompresstobase64data)
+* [decompressFromBase64](#lzjsdecompressfrombase64data)
 
 ----
 
@@ -78,7 +78,7 @@ Example of compressing and decompressing a string.
 ```javascript
 const data = 'hello hello hello';
 const compressed = lzjs.compress(data);
-console.log(compressed); // Outputs a compressed binary string
+console.log(compressed); // 'Whello \x80\x82\x84\x86\x83'
 
 const decompressed = lzjs.decompress(compressed);
 console.log(decompressed === data); // true
@@ -168,7 +168,7 @@ console.log(compressed); // 'V2hlbGxvIMKAwoLChMKGwoM='
 
 ### lzjs.decompressFromBase64(data)
 
-Decompresses a string that has been compressed with [`lzjs.compressToBase64()`](#compressToBase64data).
+Decompresses a string that has been compressed with [`lzjs.compressToBase64()`](#lzjscompresstobase64data).
 
 #### Arguments
 
