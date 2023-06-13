@@ -1,6 +1,6 @@
 {
   "name": "lzjs",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "A JavaScript library for compressing and decompressing strings using an original algorithm based on the LZ algorithm",
   "main": "lzjs.js",
   "files": [

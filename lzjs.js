@@ -1,5 +1,5 @@
 /*!
- * lzjs v1.3.0 - compressing strings using an original algorithm based on the LZ algorithm
+ * lzjs v1.3.1 - compressing strings using an original algorithm based on the LZ algorithm
  * Copyright (c) 2014 polygonplanet <polygon.planet.aqua@gmail.com>
  * https://github.com/polygonplanet/lzjs
  * @license MIT
