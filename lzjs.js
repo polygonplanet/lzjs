@@ -175,7 +175,7 @@
 
           // Faster check by pre-matching slow lastIndexOf
           index = win.indexOf(s);
-          if (!~index || index > limit) {
+          if (index === -1 || index > limit)  {
             break;
           }
         } else if (i === 3) {
@@ -191,7 +191,7 @@
           lastIndex = win.lastIndexOf(s, limit);
         }
 
-        if (!~lastIndex) {
+        if (lastIndex === -1) {
           break;
         }
 
