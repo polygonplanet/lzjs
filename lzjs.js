@@ -1,13 +1,8 @@
-/**
- * lzjs
- *
- * @description  Compression by LZ algorithm in JavaScript.
- * @fileoverview Data compression library
- * @version      1.3.0
- * @date         2015-10-06
- * @link         https://github.com/polygonplanet/lzjs
- * @copyright    Copyright (c) 2014 polygonplanet <polygon.planet.aqua@gmail.com>
- * @license      MIT
+/*!
+ * lzjs v1.3.0 - compressing strings using an original algorithm based on the LZ algorithm
+ * Copyright (c) 2014 polygonplanet <polygon.planet.aqua@gmail.com>
+ * https://github.com/polygonplanet/lzjs
+ * @license MIT
  */
 (function(name, context, factory) {
   // Supports UMD. AMD, CommonJS/Node.js and browser context
