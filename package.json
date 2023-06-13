@@ -12,9 +12,11 @@
   },
   "devDependencies": {
     "eslint": "^8.42.0",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "uglify-js": "^3.17.4"
   },
   "scripts": {
+    "minify": "uglifyjs lzjs.js -o lzjs.min.js --comments -c -m -b ascii_only=true,beautify=false",
     "test": "eslint . && mocha tests/test.js"
   },
   "engines": {
