@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1](https://github.com/polygonplanet/lzjs/compare/1.3.0...1.3.1) (2023-06-13)
+
+### Added
+- Add `.eslint.json` ([0aa4513](https://github.com/polygonplanet/lzjs/commit/0aa45131ea33cd73cae9017ceeaab91d37589007))
+- Add uglify-js and minify in scripts ([b09925b](https://github.com/polygonplanet/lzjs/commit/b09925bb49cea53ce06cc38c1a11b52368d94bc0))
+
+### Changed
+- Migrate CI from Travis to GitHub Actions ([76c67f6](https://github.com/polygonplanet/lzjs/commit/76c67f608d87cc514a1c67af15ba1ea8ed824298))
+
+### Removed
+- Drop bower support ([ee980ac](https://github.com/polygonplanet/lzjs/commit/ee980ac9951bb66b8fd8f267a3bb15a560c50e6c))
+
 ## [1.3.0](https://github.com/polygonplanet/lzjs/compare/1.2.5...1.3.0) (2015-10-05)
 
 ### Added
