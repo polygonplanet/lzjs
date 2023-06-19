@@ -45,7 +45,7 @@ When the script is loaded, the `lzjs` object is defined in the global scope (i.e
 
 ## Demo
 
-* [lzjs compression demo](http://polygonplanet.github.io/lzjs/demo/)
+* [lzjs compression demo](https://polygonplanet.github.io/lzjs/demo/)
 
 ## API
 
