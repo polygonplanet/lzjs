@@ -62,7 +62,7 @@ Compresses data into a binary string.
 
 #### Arguments
 
-* **data** *(string|Buffer)* : Input data
+* **data** *(string)* : Input data
 * **[options]** *(object)* : Compression options
   * **onData** *(function (data) {})* : Called when a data is chunked
   * **onEnd** *(function () {})* : Called when process ends
@@ -150,7 +150,7 @@ Compresses and encodes data into a Base64 string.
 
 #### Arguments
 
-* **data** *(string|Buffer)* : Input data
+* **data** *(string)* : Input data
 
 #### Returns
 

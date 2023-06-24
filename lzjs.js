@@ -1097,7 +1097,7 @@
     /**
      * Compress data.
      *
-     * @param {string|Buffer} data Input data
+     * @param {string} data Input data
      * @param {Object=} [options] Options
      * @return {string} Compressed data
      */
@@ -1117,7 +1117,7 @@
     /**
      * Compress data to base64 string.
      *
-     * @param {string|Buffer} data Input data
+     * @param {string} data Input data
      * @param {Object=} [options] Options
      * @return {string} Compressed data
      */
